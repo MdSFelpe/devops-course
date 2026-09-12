@@ -16,6 +16,9 @@ jobs:
   TERRAFORM_IAC_SCAN:
     name: Terraform Validation and IaC Security
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./classes_activities/SUA_PASTA_AQUI/terraform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,21 +30,18 @@ jobs:
 
       - name: Terraform Format Check
         run: terraform fmt -check
-        working-directory: ./terraform
 
       - name: Terraform Init
         run: terraform init -backend=false
-        working-directory: ./terraform
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./terraform
 
       - name: Run Trivy IaC Security Scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
-          scan-ref: './terraform'
+          scan-ref: './classes_activities/SUA_PASTA_AQUI/terraform'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
 
@@ -60,6 +60,8 @@ jobs:
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          projectBaseDir: ./classes_activities/SUA_PASTA_AQUI
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
@@ -77,6 +79,9 @@ jobs:
   DOCKER_BUILD_RUN_OWASP_ZAP:
     name: Docker Build, Run and DAST
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./classes_activities/SUA_PASTA_AQUI
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,7 +125,7 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/minha-api:latest
           IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
-          docker build -t $IMAGE_NAME_LOWER .
+          docker build -t $IMAGE_NAME_LOWER ./classes_activities/SUA_PASTA_AQUI
           docker push $IMAGE_NAME_LOWER
 
       - name: Run Simulated Deployment
