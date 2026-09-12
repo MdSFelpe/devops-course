@@ -1,0 +1,131 @@
+name: Security
+
+on: 
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  
+permissions:
+  contents: read
+  issues: write
+  checks: write
+  packages: write
+
+jobs:
+  TERRAFORM_IAC_SCAN:
+    name: Terraform Validation and IaC Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: ./terraform
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ./terraform
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./terraform
+
+      - name: Run Trivy IaC Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './terraform'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+
+  BUILD_AND_SAST_WITH_SONAR:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+  SCA_WITH_GITHUB_DEPENDENCY_REVIEW:
+    name: Dependency Scan (SCA)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SCA GitHub Dependency Review
+        uses: actions/dependency-review-action@v4
+
+  DOCKER_BUILD_RUN_OWASP_ZAP:
+    name: Docker Build, Run and DAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t minha-api .
+
+      - name: Run Docker container
+        run: docker run -d -p 5000:5000 --name minha-api-container minha-api
+
+      - name: Wait for application
+        run: |
+          for i in {1..10}; do
+            curl -f http://localhost:5000 && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: 'http://localhost:5000'
+
+  DEPLOY_SIMULATION:
+    name: Continuous Deployment (CD)
+    runs-on: ubuntu-latest
+    needs: [TERRAFORM_IAC_SCAN, BUILD_AND_SAST_WITH_SONAR, DOCKER_BUILD_RUN_OWASP_ZAP]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/minha-api:latest
+          IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+          docker build -t $IMAGE_NAME_LOWER .
+          docker push $IMAGE_NAME_LOWER
+
+      - name: Run Simulated Deployment
+        run: |
+          echo "=========================================="
+          echo " Deploying Application to Production...  "
+          echo " All Security Scans Passed Successfully! "
+          echo "=========================================="
