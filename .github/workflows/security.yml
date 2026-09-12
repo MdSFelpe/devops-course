@@ -48,9 +48,6 @@ jobs:
   BUILD_AND_SAST_WITH_SONAR:
     name: Build and analyze
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./classes_activities/Práctica Scan Automático - Application Security
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,9 +59,9 @@ jobs:
           python-version: '3.11'
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v2
+        uses: SonarSource/sonarqube-scan-action@v3
         with:
-          projectBaseDir: ./classes_activities/Prática Scan Automático - Aplicação de Shift-Left
+          projectBaseDir: './classes_activities/Práctica Scan Automático - Application Security'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
