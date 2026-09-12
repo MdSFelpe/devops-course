@@ -16,6 +16,9 @@ jobs:
   TERRAFORM_IAC_SCAN:
     name: Terraform Validation and IaC Security
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left/terraform"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,31 +30,24 @@ jobs:
 
       - name: Terraform Format Check
         run: terraform fmt -check
-        working-directory: ./terraform
 
       - name: Terraform Init
         run: terraform init -backend=false
-        working-directory: ./terraform
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./terraform
 
       - name: Run Trivy IaC Security Scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
-          scan-ref: './terraform'
+          scan-ref: './classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left/terraform'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
 
   BUILD_AND_SAST_WITH_SONAR:
-    BUILD_AND_SAST_WITH_SONAR:
     name: Build and analyze
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: "./classes_activities/Practica Scan Automatico - Application Security"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +61,7 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v3
         with:
-          projectBaseDir: "./classes_activities/Practica Scan Automatico - Application Security"
+          projectBaseDir: './classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
@@ -83,6 +79,9 @@ jobs:
   DOCKER_BUILD_RUN_OWASP_ZAP:
     name: Docker Build, Run and DAST
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -126,7 +125,7 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/minha-api:latest
           IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
-          docker build -t $IMAGE_NAME_LOWER .
+          docker build -t $IMAGE_NAME_LOWER "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left"
           docker push $IMAGE_NAME_LOWER
 
       - name: Run Simulated Deployment
