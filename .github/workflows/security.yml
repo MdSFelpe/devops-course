@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left/terraform"
+        working-directory: ./classes_activities/app-security/terraform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
-          scan-ref: './classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left/terraform'
+          scan-ref: './classes_activities/app-security/terraform'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
 
@@ -61,7 +61,7 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v3
         with:
-          projectBaseDir: './classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left'
+          projectBaseDir: ./classes_activities/app-security
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left"
+        working-directory: ./classes_activities/app-security
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/minha-api:latest
           IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
-          docker build -t $IMAGE_NAME_LOWER "./classes_activities/Practica Scan Automatico - Aplicacao de Shift-Left"
+          docker build -t $IMAGE_NAME_LOWER ./classes_activities/app-security
           docker push $IMAGE_NAME_LOWER
 
       - name: Run Simulated Deployment
