@@ -48,6 +48,9 @@ jobs:
   BUILD_AND_SAST_WITH_SONAR:
     name: Build and analyze
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./classes_activities/Práctica Scan Automático - Application Security
     steps:
       - uses: actions/checkout@v4
         with:
