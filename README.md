@@ -43,6 +43,8 @@ Dependency Review (SCA)
        ↓
   OWASP ZAP (DAST)
        ↓
+Deploy Simulado (CD)
+
 
 ````
 
